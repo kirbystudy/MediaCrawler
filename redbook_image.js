@@ -120,15 +120,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-/**
- * 下载文件到本地目录
- * @param {String} url - 文件的URL地址
- * @param {String} filePath - 保存到本地的文件路径（包括文件名）
- * @param {Number} retries - 当前已经重试的次数
- * @param {Number} maxRetries - 最大重试次数
- * @return {Promise} - 返回一个Promise对象
- */
 /**
  * 下载文件到本地目录
  * @param {String} url - 文件的URL地址
