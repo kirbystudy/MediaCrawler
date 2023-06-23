@@ -18,7 +18,7 @@ const HEADERS = {
 
 
 (async () => {
-    try {       
+    try {
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
@@ -52,38 +52,54 @@ function createDirectory(dirPath) {
 
 async function downloadVideos(urls) {
     try {
+        console.log(`待下载视频数量：${urls.length}`);
+
         createDirectory(`${__dirname}/video`);
 
-        const bar = new cliProgress.SingleBar(
+        const progress = new cliProgress.SingleBar(
             {
-                format: '总进度：{bar} | {percentage}% | {value}/{total}'
+                format: '总进度：{bar} | {percentage}% | {value}/{total}',
+                stopOnComplete: true
             },
             cliProgress.Presets.shades_classic
         );
-        bar.start(urls.length, 0);
+        progress.start(urls.length, 0);
 
-        for (const url of urls) {
-            const html = await getHtmlFromUrl(url);
-            const videoInfo = parseVideoLink(html);
-            console.log(`\n开始下载视频：${videoInfo.title}`);
+        const downloadTasks = urls.map(async (url) => {
+            try {
+                const html = await getHtmlFromUrl(url);
+                const videoInfo = parseVideoLink(html);
+                console.log(`\n开始下载视频：${videoInfo.title}`);
 
-            const folder = `${__dirname}/video/${videoInfo.title}`;
-            createDirectory(folder);
+                const folder = `${__dirname}/video/${videoInfo.title}`;
+                createDirectory(folder);
 
-            const dest = `${folder}/${videoInfo.videoId}.mp4`;
-            await downloadVideo(videoInfo.videoUrl, dest);
+                const dest = `${folder}/${videoInfo.videoId}.mp4`;
+                await downloadVideo(videoInfo.videoUrl, dest);
 
-            bar.increment();
-            console.log(`\n下载完成：${videoInfo.title}`);
-        }
+                console.log(`\n下载完成：${videoInfo.title}`);
+            } catch (error) {
+                console.error('\n视频下载失败：', error);
+            } finally {
+                progress.increment();
 
-        bar.stop();
-        console.log('所有视频下载完成！');
+                if (progress.value === progress.total) {
+                    progress.stop();
+                    console.log('\n所有视频下载完成！');
+                    process.exit(0);
+                }
+            }
+        });
+
+        await Promise.all(downloadTasks);
+
     } catch (error) {
         if (error instanceof TypeError) {
             console.error('\n获取数据失败：', error);
+            process.exit(1)
         } else if (error instanceof Error) {
             console.error('\n视频下载失败：', error);
+            process.exit(1)
         }
     }
 }
