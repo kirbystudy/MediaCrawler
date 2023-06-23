@@ -5,14 +5,16 @@ import { dirname } from 'path'; // 导入 dirname 函数，用于获取当前文
 import { fileURLToPath } from 'url'; // 导入 fileURLToPath 函数，用于获取当前文件路径
 import cheerio from 'cheerio'; // 导入 cheerio 库，用于解析 HTML 页面
 import cliProgress from 'cli-progress'; // 导入 cli-progress 库，用于显示下载进度条
+import readline from 'readline'
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Cookie值不是持久的，可能过了一天或者几天后就会失效
 const HEADERS = {
     'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-    Cookie:
-        'xhsTrackerId=a32db973-f67d-4842-a047-f60a6dfb64bd; xhsTrackerId.sig=pze-jfxgqNP0jmBwKyjA2awterEQPKQTDa1ZkvvsPIo; xhsTracker=url=explore&searchengine=baidu; xhsTracker.sig=u1cFYHAwm89lKbFLL1Y8vp9JcskioXWTa56RKaAB2ys; xsecappid=xhs-pc-web; a1=18834163b32fq9eg76e7cap0vs5ld3veuvpmhktco50000424130; webId=71199a5d0b387d06f3f1fa825b4071f0; gid=yYYq4yKqYi7iyYYq4yKqDhT9qJiAjdkWKdWSUSl0U8hM26281fqhdx8884J4yq88DS04f42S; gid.sign=W8CEAhgALtsKx2rpcArnuEyWR24=; webBuild=2.11.4; web_session=040069b5f5e5ce20e2f81088a4364ba65d30f0; websectiga=f3d8eaee8a8c63016320d94a1bd00562d516a5417bc43a032a80cbf70f07d5c0; sec_poison_id=455f2c76-fc1b-4caa-9e81-8b3d24858411.1c0867ec69231f446ab9de4bb8c4a1cc; Hm_lvt_9df4eb7fd5f9e857affabee879b4b904=1652362218,1652403516,1652507458,1652589443; Hm_lpvt_9df4eb7fd5f9e857affabee879b4b904=1652593120'
+    'Cookie':
+        'xhsTrackerId=a32db973-f67d-4842-a047-f60a6dfb64bd; xhsTrackerId.sig=pze-jfxgqNP0jmBwKyjA2awterEQPKQTDa1ZkvvsPIo; xhsTracker=url=explore&searchengine=baidu; xhsTracker.sig=u1cFYHAwm89lKbFLL1Y8vp9JcskioXWTa56RKaAB2ys; a1=18834163b32fq9eg76e7cap0vs5ld3veuvpmhktco50000424130; webId=71199a5d0b387d06f3f1fa825b4071f0; gid=yYYq4yKqYi7iyYYq4yKqDhT9qJiAjdkWKdWSUSl0U8hM26281fqhdx8884J4yq88DS04f42S; gid.sign=W8CEAhgALtsKx2rpcArnuEyWR24=; web_session=040069b5f5e5ce20e2f81088a4364ba65d30f0; webBuild=2.11.5; cache_feeds=[]; websectiga=29098a4cf41f76ee3f8db19051aaa60c0fc7c5e305572fec762da32d457d76ae; xsecappid=ranchi'
 };
 
 /**
@@ -21,12 +23,14 @@ const HEADERS = {
  * @returns {Promise<string>} 返回 HTML 页面内容的 Promise 对象
  */
 async function getHtmlFromUrl(url) {
+    const newUrl = url.replace(/\?.*/g, '');
+    console.log(newUrl)
     try {
-        const response = await fetch(url, { headers: HEADERS });
+        const response = await fetch(newUrl, { headers: HEADERS });
         const html = await response.text();
         return html;
     } catch (err) {
-        throw new Error(`获取 ${url} 数据失败：${err}`);
+        throw new Error(`获取 ${newUrl} 数据失败：${err}`);
     }
 }
 
@@ -145,39 +149,54 @@ function createDirectory(dirPath) {
  */
 async function downloadVideos(urls) {
     try {
+        console.log(`待下载视频数量：${urls.length}`);
+
         createDirectory(`${__dirname}/video`);
 
-        const bar = new cliProgress.SingleBar(
+        const progress = new cliProgress.SingleBar(
             {
-                format: '总进度：{bar} | {percentage}% | {value}/{total}'
+                format: '总进度：{bar} | {percentage}% | {value}/{total}',
+                stopOnComplete: true
             },
             cliProgress.Presets.shades_classic
         );
-        bar.start(urls.length, 0);
+        progress.start(urls.length, 0);
 
-        for (const url of urls) {
-            const html = await getHtmlFromUrl(url);
-            const videoInfo = parseVideoLink(html);
-            console.log(`\n开始下载视频：${videoInfo.title}`);
+        const downloadTasks = urls.map(async (url) => {
+            try {
+                const html = await getHtmlFromUrl(url);
+                const videoInfo = parseVideoLink(html);
+                console.log(`\n开始下载视频：${videoInfo.title}`);
 
-            // 根据视频的标题创建相应的文件夹
-            const folder = `${__dirname}/video/${videoInfo.title}`;
-            createDirectory(folder);
+                const folder = `${__dirname}/video/${videoInfo.title}`;
+                createDirectory(folder);
 
-            const dest = `${folder}/${videoInfo.videoId}.mp4`;
-            await downloadVideo(videoInfo.videoUrl, dest);
+                const dest = `${folder}/${videoInfo.videoId}.mp4`;
+                await downloadVideo(videoInfo.videoUrl, dest);
 
-            bar.increment();
-            console.log(`\n下载完成：${videoInfo.title}`);
-        }
+                console.log(`\n下载完成：${videoInfo.title}`);
+            } catch (error) {
+                console.error('\n视频下载失败：', error);
+            } finally {
+                progress.increment();
 
-        bar.stop();
-        console.log('所有视频下载完成！');
+                if (progress.value === progress.total) {
+                    progress.stop();
+                    console.log('\n所有视频下载完成！');
+                    process.exit(0);
+                }
+            }
+        });
+
+        await Promise.all(downloadTasks);
+
     } catch (error) {
         if (error instanceof TypeError) {
             console.error('\n获取数据失败：', error);
+            process.exit(1)
         } else if (error instanceof Error) {
             console.error('\n视频下载失败：', error);
+            process.exit(1)
         }
     }
 }
@@ -185,7 +204,16 @@ async function downloadVideos(urls) {
 // 下载指定 URL 的视频
 (async () => {
     try {
-        const urls = ['https://www.xiaohongshu.com/explore/6408802a000000000703b89b'];
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        const answer = await new Promise((resolve) => {
+            rl.question('请输入小红书视频链接：', (input) => {
+                resolve(input);
+            });
+        });
+        const urls = answer.split(' ');
         await downloadVideos(urls);
         process.exit(); // 完成下载后退出程序
     } catch (error) {

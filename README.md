@@ -33,7 +33,10 @@
 
 4.在终端中运行脚本。
 ```shell
-  node redbook_image.js
+  # 下载无水印图片
+  npm run image
+  # 下载无水印视频
+  npm run video
 ```
 
 ## 贡献
