@@ -1,9 +1,10 @@
 import axios from 'axios';
-import request from 'request';
+import fetch from 'node-fetch';
 import fs from 'fs'
 import { mkdirp } from 'mkdirp';
 import cheerio from 'cheerio';
 import path from 'path';
+import readline from 'readline'
 
 /**
  * 创建文件夹
@@ -35,16 +36,16 @@ function mkdir(folderPath) {
  * @param {object} headers - 请求头
  * @returns {Promise<string>}
  */
-function fetchHtml(url, headers) {
-    return new Promise((resolve, reject) => {
-        request.get({ url, headers }, function (err, response, body) {
-            if (err || response.statusCode !== 200) {
-                reject(new Error(`无法获取HTML URL:${url}, status code: ${response.statusCode}`));
-            } else {
-                resolve(body);
-            }
-        });
-    });
+async function fetchHtml(url, headers) {
+    const newUrl = url.replace(/\?.*/g, '');
+
+    try {
+        const response = await fetch(newUrl, { headers: headers });
+        const html = await response.text();
+        return html;
+    } catch (err) {
+        throw new Error(`获取 ${newUrl} 数据失败：${err}`);
+    }
 }
 
 
@@ -168,11 +169,11 @@ async function download(url, filePath, retries = 0, maxRetries = 5) {
  * @param {[string]} urls - 页面地址列表
  * @param {string} cookie - cookies
  */
-async function loopLink(urls, cookie) {
+async function loopLink(urls) {
     const headers = {
-        accept:
+        'accept':
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-        cookie,
+        'Cookie': 'xhsTrackerId=a32db973-f67d-4842-a047-f60a6dfb64bd; xhsTrackerId.sig=pze-jfxgqNP0jmBwKyjA2awterEQPKQTDa1ZkvvsPIo; xhsTracker=url=explore&searchengine=baidu; xhsTracker.sig=u1cFYHAwm89lKbFLL1Y8vp9JcskioXWTa56RKaAB2ys; a1=18834163b32fq9eg76e7cap0vs5ld3veuvpmhktco50000424130; webId=71199a5d0b387d06f3f1fa825b4071f0; gid=yYYq4yKqYi7iyYYq4yKqDhT9qJiAjdkWKdWSUSl0U8hM26281fqhdx8884J4yq88DS04f42S; gid.sign=W8CEAhgALtsKx2rpcArnuEyWR24=; web_session=040069b5f5e5ce20e2f81088a4364ba65d30f0; webBuild=2.11.5; cache_feeds=[]; xsecappid=xhs-pc-web; websectiga=82e85efc5500b609ac1166aaf086ff8aa4261153a448ef0be5b17417e4512f28; sec_poison_id=cf7a4e0b-b26b-4963-8588-417cf50da70e',
         'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
     };
@@ -187,15 +188,23 @@ async function loopLink(urls, cookie) {
 }
 
 (async () => {
-    const urls = [
-        'https://www.xiaohongshu.com/explore/64781bdd0000000013004fdf'
-    ];
-    const cookie = 'xhsTrackerId=a32db973-f67d-4842-a047-f60a6dfb64bd; xhsTrackerId.sig=pze-jfxgqNP0jmBwKyjA2awterEQPKQTDa1ZkvvsPIo; xhsTracker=url=explore&searchengine=baidu; xhsTracker.sig=u1cFYHAwm89lKbFLL1Y8vp9JcskioXWTa56RKaAB2ys; xsecappid=xhs-pc-web; a1=18834163b32fq9eg76e7cap0vs5ld3veuvpmhktco50000424130; webId=71199a5d0b387d06f3f1fa825b4071f0; gid=yYYq4yKqYi7iyYYq4yKqDhT9qJiAjdkWKdWSUSl0U8hM26281fqhdx8884J4yq88DS04f42S; gid.sign=W8CEAhgALtsKx2rpcArnuEyWR24=; web_session=040069b5f5e5ce20e2f81088a4364ba65d30f0; webBuild=2.11.4; websectiga=59d3ef1e60c4aa37a7df3c23467bd46d7f1da0b1918cf335ee7f2e9e52ac04cf; sec_poison_id=ec285d80-f9f8-426e-827c-2ad206e8eae4; acw_tc=fa9509dd41e4495ab1d6a36dd5c3f381e29923205bb1c7f571c1cc313781d99e';
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    const answer = await new Promise((resolve) => {
+        rl.question('请输入小红书图片链接：', (input) => {
+            resolve(input);
+        });
+    });
+    const urls = answer.split(' ');
 
     try {
-        await loopLink(urls, cookie);
+        await loopLink(urls);
         console.log('所有图片下载成功!');
+        process.exit(0);
     } catch (error) {
         console.error('下载图片失败:', error);
+        process.exit(1)
     }
 })();

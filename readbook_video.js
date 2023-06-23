@@ -24,7 +24,7 @@ const HEADERS = {
  */
 async function getHtmlFromUrl(url) {
     const newUrl = url.replace(/\?.*/g, '');
-    console.log(newUrl)
+
     try {
         const response = await fetch(newUrl, { headers: HEADERS });
         const html = await response.text();
