@@ -5,8 +5,9 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "image": "node redbook_image.js",
-    "video": "node readbook_video.js"
+    "redbook_image": "node redbook_image.js",
+    "redbook_video": "node readbook_video.js",
+    "qqworld_video": "node qqworld_video.js"
   },
   "author": "",
   "license": "ISC",
