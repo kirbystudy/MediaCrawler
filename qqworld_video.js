@@ -130,7 +130,7 @@ function parseVideoLink(html) {
             if (data === null) {
                 throw new Error('未找到视频链接');
             }
-            let title = data.feeds[0].content.replace(/(\{tagName=(.*?)\}|#(.*?))/g, '');
+            let title = data.feeds[0].content.replace(/#{tagName=(.*?)}/g, '$1');
             let videoId = data.feeds[0].id
             let videoUrl = data.feeds[0].video.vecVideoUrl[0].playUrl
             return { title, videoId, videoUrl }
