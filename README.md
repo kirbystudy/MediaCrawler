@@ -1,20 +1,20 @@
-# RedMediaCrawler
+# MediaCrawler
 
 当您在某社交媒体浏览图片和视频时，或许会遇到一些好看但带有水印的素材。要去除水印，需要前往某个小程序，获取无水印的图片和视频还需观看广告。
 
-为了解决这个问题，我开发了一款名为 RedMediaCrawler 的社交媒体文件爬虫工具，旨在解决用户下载带有水印的图片和视频所面临的麻烦。这个基于 JavaScript 的工具可以获取链接中的所有图片和视频，并且所有下载下来的文件都没有水印，让用户获得更佳的视觉体验。
+为了解决这个问题，我开发了一款名为 MediaCrawler 的社交媒体文件爬虫工具，旨在解决用户下载带有水印的图片和视频所面临的麻烦。这个基于 JavaScript 的工具可以获取链接中的所有图片和视频，并且所有下载下来的文件都没有水印，让用户获得更佳的视觉体验。
 
-使用 RedMediaCrawler 非常方便，只需要输入链接的 URL 和 Cookie，该工具就会自动下载其中包括的所有图片和视频，并将它们保存在您的本地计算机上。相比于前往小程序观看广告之后才能去除水印的繁琐步骤，RedMediaCrawler 对用户而言更加简便和快捷。
+使用 MediaCrawler 非常方便，只需要输入链接的 URL 和 Cookie，该工具就会自动下载其中包括的所有图片和视频，并将它们保存在您的本地计算机上。相比于前往小程序观看广告之后才能去除水印的繁琐步骤，MediaCrawler 对用户而言更加简便和快捷。
 
 ## 使用方法：
 1.首先克隆本仓库到您的本地计算机上。
 ```shell
-   https://github.com/kirbystudy/RedMediaCrawler.git
+   https://github.com/kirbystudy/MediaCrawler.git
 ```
 
 2.进入项目目录并安装依赖项。
 ```shell
-  cd RedMediaCrawler
+  cd MediaCrawler
   npm install
 ```
 3.获取 cookies
